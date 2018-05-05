@@ -1,250 +1,63 @@
 import java.io.*;
 import java.util.*;
+import java.text.*;
+import java.math.*;
+import java.util.regex.*;
 
 public class Solution {
+
+    static int quickestWayUp(int[][] ladders, int[][] snakes) {
+        // Complete this function
+        boolean[][] canReachTileIn = new boolean[100][100];
+        int d, r;
+        for (d = 0; d < 100; d++)
+            for (r = 0; r < 100; r++)
+                canReachTileIn[d][r] = false;
+        int[] transfer = new int[100];
+        for (d = 0; d < 100; d++)
+            transfer[d] = d;
+        for (int[] ladder : ladders)
+            transfer[ladder[0] - 1] = ladder[1] - 1;
+        for (int[] snake : snakes) 
+            transfer[snake[0] - 1] = snake[1] - 1;
+        int e;
+        for (e = 1; e <= 6; e++) {
+            if (transfer[e] == 99)
+                return 1;
+            canReachTileIn[transfer[e]][0] = true;
+        }
+        for (r = 1; r < 100; r++)
+            for (d = 1; d < 100; d++)
+                if (canReachTileIn[d][r - 1])
+                    for (e = d + 1; e <= d + 6 && e < 100; e++) {
+                        if (transfer[e] == 99)
+                            return r + 1;
+                        canReachTileIn[transfer[e]][r] = true;
+                    }
+        return -1;
+    }
+
     public static void main(String[] args) {
-        //
-        Scanner input = new Scanner(System.in);
-        int T;
-        do {
-            T = input.nextInt();
-        } while (T < 1 || T > 10);
-        while (T-- > 0) {
-            int N;
-            do {
-                N = input.nextInt();
-            } while (N < 1 || N > 15);
-            int[] ladderBottoms = new int[N];
-            int[] ladderHeads = new int[N];
-            for (int l = 0; l < N; l++) {
-                int bottom, head;
-                do {
-                    bottom = input.nextInt();
-                } while (bottom < 1 || bottom > 99);
-                do {
-                    head = input.nextInt();
-                } while (head < 2 || head > 100);
-                ladderBottoms[l] = bottom;
-                ladderHeads[l] = head;
-            }
-            int M;
-            do {
-                M = input.nextInt();
-            } while (M < 1 || M > 15);
-            int[] snakeMouths = new int[M];
-            int[] snakeTails = new int[M];
-            for (int z = 0; z < M; z++) {
-                int mouth, tail;
-                do {
-                    mouth = input.nextInt();
-                } while (mouth < 3 || mouth > 99);
-                do {
-                    tail = input.nextInt();
-                } while (tail < 2 || tail > 98);
-                snakeMouths[z] = mouth;
-                snakeTails[z] = tail;
-            }
-            try {
-                final SnakesAndLaddersBoard salb = new SnakesAndLaddersBoard(ladderBottoms, ladderHeads, snakeMouths, snakeTails);
-                int mnor = minNumOfRolls(salb);
-                System.out.println(mnor);
-            } catch (InvalidSnakesAndLaddersBoardException ivsalbe) {
-            //
-            }
-        }
-        input.close();
-    }
-    
-    public static int minNumOfRolls(SnakesAndLaddersBoard salb) {
-        int u0, v0;
-        final int width0 = salb.getNumberOfLadders();
-        final int height0 = (int) (Math.pow(2, salb.getNumberOfLadders()));
-        boolean b;
-        final boolean[][] shouldAvoidLadder = new boolean[width0][height0];
-        for (u0 = 0; u0 < width0; u0++) {
-            b = true;
-            for (v0 = 0; v0 < height0; v0++) {
-                if (v0 % (int) (Math.pow(2, u0)) == 0)
-                    b = !b;
-                shouldAvoidLadder[u0][v0] = b;
-            }
-        }
-        int u1, v1;
-        final int width1 = salb.getNumberOfSnakes();
-        final int height1 = (int) (Math.pow(2, salb.getNumberOfSnakes()));
-        final boolean[][] shouldAvoidSnake = new boolean[width1][height1];
-        for (u1 = 0; u1 < width1; u1++) {
-            b = true;
-            for (v1 = 0; v1 < height1; v1++) {
-                if (v1 % (int) (Math.pow(2, u1)) == 0)
-                    b = !b;
-                shouldAvoidSnake[u1][v1] = b;
-            }
-        }
-        
-        int min = 200;
-        for (v0 = 0; v0 < shouldAvoidLadder[0].length; v0++)
-            for (v1 = 0; v1 < shouldAvoidSnake[0].length; v1++) {
-                boolean[] includeLadders = new boolean[shouldAvoidLadder.length];
-                for (u0 = 0; u0 < shouldAvoidLadder.length; u0++)
-                    includeLadders[u0] = !shouldAvoidLadder[u0][v0];
-                boolean[] includeSnakes = new boolean[shouldAvoidSnake.length];
-                for (u1 = 0; u1 < shouldAvoidLadder.length; u1++)
-                    includeSnakes[u1] = !shouldAvoidSnake[u1][v1];
-                final int nextMin = minNumOfRolls(salb, includeLadders, includeSnakes);
-                if (nextMin < min)
-                    min = nextMin;
-            }
-        return min;
-    }
-    
-    private static int minNumOfRolls(SnakesAndLaddersBoard salb, boolean[] includeLadders, boolean[] includeSnakes) {
-        Map<Integer, Boolean> ladderIncluded = new LinkedHashMap<Integer, Boolean>();
-        int ladderIndex = 0;
-        Map<Integer, Boolean> snakeIncluded = new LinkedHashMap<Integer, Boolean>();
-        int snakeIndex = 0;
-        boolean[] visited = new boolean[100];
-        for (int p = 1; p <= 100; p++) {
-            switch (salb.getBoardCode()[p - 1]) {
-                case 'b':
-                    ladderIncluded.put(p, includeLadders[ladderIndex++]);
-                    break;
-                case 'm':
-                    snakeIncluded.put(p, includeSnakes[snakeIndex++]);
-            }
-            visited[p - 1] = false;
-        }
-        int rolls = 0;
-        int position = 1;
-        int diceRoll;
-        while (position < 100) {
-            diceRoll = 1;
-            boolean transportFound = false;
-            while (position + diceRoll < 100 && diceRoll < 6 && !transportFound) {
-                switch (salb.getBoardCode()[position + diceRoll - 1]) {
-                    case 'b':
-                        if (ladderIncluded.get(position + diceRoll)) 
-                            transportFound = true;
-                        break;
-                    case 'm':
-                        if (snakeIncluded.get(position + diceRoll))
-                            transportFound = true;
+        Scanner in = new Scanner(System.in);
+        int t = in.nextInt();
+        for(int a0 = 0; a0 < t; a0++){
+            int n = in.nextInt();
+            int[][] ladders = new int[n][2];
+            for(int ladders_i = 0; ladders_i < n; ladders_i++){
+                for(int ladders_j = 0; ladders_j < 2; ladders_j++){
+                    ladders[ladders_i][ladders_j] = in.nextInt();
                 }
-                if (transportFound)
-                    break;
-                diceRoll++;
             }
-            boolean containsUnwantedTransport;
-            do {
-                containsUnwantedTransport = false;
-                switch (salb.getBoardCode()[position + diceRoll - 1]) {
-                    case 'b':
-                        if (!ladderIncluded.get(position + diceRoll)) 
-                            containsUnwantedTransport = true;
-                        break;
-                    case 'm':
-                        if (!snakeIncluded.get(position + diceRoll)) 
-                            containsUnwantedTransport = true;
+            int m = in.nextInt();
+            int[][] snakes = new int[m][2];
+            for(int snakes_i = 0; snakes_i < m; snakes_i++){
+                for(int snakes_j = 0; snakes_j < 2; snakes_j++){
+                    snakes[snakes_i][snakes_j] = in.nextInt();
                 }
-                if (containsUnwantedTransport)
-                    --diceRoll;
-            } while (containsUnwantedTransport && diceRoll > 0);
-            position += diceRoll;
-            position = salb.getTransportCode()[position - 1];
-            if (visited[position - 1])
-                return 200;
-            visited[position - 1] = true;
-            ++rolls;
+            }
+            int result = quickestWayUp(ladders, snakes);
+            System.out.println(result);
         }
-        return rolls;
-    }
-}
-
-final class SnakesAndLaddersBoard {
-    private final char[] boardCode; /*
-                               * 'b' = Ladder Bottom
-                               * 'h' = Ladder Head
-                               * 'm' = Snake Mouth
-                               * 't' = Snake Tail
-                               */
-    private final int numberOfLadders;
-    private final int numberOfSnakes;
-    
-    private final int[] transportCode;
-    
-    public SnakesAndLaddersBoard(int[] ladderBottoms, int[] ladderHeads, int[] snakeMouths, int[] snakeTails) throws InvalidSnakesAndLaddersBoardException {
-        for (int lb : ladderBottoms) {
-            for (int lh : ladderHeads)
-                if (lb == lh)
-                    throw new InvalidSnakesAndLaddersBoardException("Invalid");
-            for (int sm : snakeMouths)
-                if (lb == sm)
-                    throw new InvalidSnakesAndLaddersBoardException("Invalid");
-            for (int st : snakeTails)
-                if (lb == st)
-                    throw new InvalidSnakesAndLaddersBoardException("Invalid");
-        }
-        for (int lh : ladderHeads) {
-            for (int sm : snakeMouths)
-                if (lh == sm)
-                    throw new InvalidSnakesAndLaddersBoardException("Invalid");
-            for (int st : snakeTails)
-                if (lh == st)
-                    throw new InvalidSnakesAndLaddersBoardException("Invalid");
-        }
-        for (int sm : snakeMouths)
-            for (int st : snakeTails)
-                if (sm == st)
-                    throw new InvalidSnakesAndLaddersBoardException("Invalid");
-        // Count the number of ladders and snakes
-        int numberOfLadderBottoms = ladderBottoms.length, numberOfLadderHeads = ladderHeads.length, numberOfSnakeMouths = snakeMouths.length, numberOfSnakeTails = snakeTails.length;
-        numberOfLadders = numberOfLadderHeads;
-        numberOfSnakes = numberOfSnakeMouths;
-        if (!(numberOfLadderBottoms == numberOfLadderHeads))
-            throw new InvalidSnakesAndLaddersBoardException("Invalid");
-        if (!(numberOfSnakeMouths == numberOfSnakeTails))
-            throw new InvalidSnakesAndLaddersBoardException("Invalid");
-        transportCode = new int[100];
-        int s;
-        for (s = 0; s < transportCode.length; s++)
-            transportCode[s] = s + 1;
-        for (s = 0; s < ladderBottoms.length; s++) 
-            transportCode[ladderBottoms[s] - 1] = ladderHeads[s];
-        for (s = 0; s < snakeMouths.length; s++)
-            transportCode[snakeMouths[s] - 1] = snakeTails[s];
-        boardCode = new char[100];
-        for (s = 0; s < boardCode.length; s++)
-            boardCode[s] = 'r';
-        
-        for (int lb : ladderBottoms)
-            boardCode[lb - 1] = 'b';
-        for (int lh : ladderHeads)
-            boardCode[lh - 1] = 'h';
-        for (int sm : snakeMouths)
-            boardCode[sm - 1] = 'm';
-        for (int st : snakeTails)
-            boardCode[st - 1] = 't';
-    }
-    
-    public char[] getBoardCode() {
-        return boardCode;
-    }
-    
-    public int getNumberOfLadders() {
-        return numberOfLadders;
-    }
-    
-    public int getNumberOfSnakes() {
-        return numberOfSnakes;
-    }
-    
-    public int[] getTransportCode() {
-        return transportCode;
-    }
-}
-
-final class InvalidSnakesAndLaddersBoardException extends Exception {
-    public InvalidSnakesAndLaddersBoardException(String exc) {
-        super(exc);
+        in.close();
     }
 }
