@@ -74,14 +74,14 @@ public class Solution {
                                                     dX = next.getDX();
                                                     dY = next.getDY();
                                                     try {
-                                                    if (canReachIn[i + dX][j + dY][m + 1]) {
-                                                        m++;
-                                                        i += dX;
-                                                        j += dY;
-                                                        changedIJ = true;
-                                                        path.add(next.getMoveLabel());
-                                                        break;
-                                                    }
+                                                        if (canReachIn[i + dX][j + dY][m + 1]) {
+                                                            m++;
+                                                            i += dX;
+                                                            j += dY;
+                                                            changedIJ = true;
+                                                            path.add(next.getMoveLabel());
+                                                            break;
+                                                        }
                                                     } catch (ArrayIndexOutOfBoundsException aioobexc) {
                                                         
                                                     }
